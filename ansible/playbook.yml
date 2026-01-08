@@ -1,0 +1,25 @@
+- name: Configure App Server
+  hosts: app
+  become: yes
+
+  tasks:
+    - name: Update system
+      apt:
+        update_cache: yes
+
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+
+    - name: Start Docker
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Pull application image
+      shell: docker pull aditya/devsecops-app:latest
+
+    - name: Run application container
+      shell: docker run -d -p 3000:3000 aditya/devsecops-app:latest
