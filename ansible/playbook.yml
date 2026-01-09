@@ -3,64 +3,36 @@
   become: yes
 
   tasks:
+    - name: Update system
+      apt:
+        update_cache: yes
 
-  - name: Update system
-    apt:
-      update_cache: yes
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
 
-  - name: Install Docker
-    apt:
-      name: docker.io
-      state: present
+    - name: Start Docker
+      service:
+        name: docker
+        state: started
+        enabled: true
 
-  - name: Start Docker
-    service:
-      name: docker
-      state: started
-      enabled: true
+    - name: Create monitoring network
+      shell: docker network create monitoring || true
 
-  - name: Run Node Exporter
-    docker_container:
-      name: node-exporter
-      image: prom/node-exporter
-      state: started
-      restart_policy: always
-      ports:
-        - "9100:9100"
+    - name: Run Prometheus
+      shell: |
+        docker rm -f prometheus || true
+        docker run -d --name prometheus \
+          --network monitoring \
+          -p 9090:9090 \
+          prom/prometheus
 
-  - name: Create Prometheus config directory
-    file:
-      path: /opt/prometheus
-      state: directory
-
-  - name: Create Prometheus config file
-    copy:
-      dest: /opt/prometheus/prometheus.yml
-      content: |
-        global:
-          scrape_interval: 15s
-
-        scrape_configs:
-          - job_name: 'node'
-            static_configs:
-              - targets: ['localhost:9100']
-
-  - name: Run Prometheus
-    docker_container:
-      name: prometheus
-      image: prom/prometheus
-      state: started
-      restart_policy: always
-      ports:
-        - "9090:9090"
-      volumes:
-        - /opt/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-
-  - name: Run Grafana
-    docker_container:
-      name: grafana
-      image: grafana/grafana
-      state: started
-      restart_policy: always
-      ports:
-        - "3000:3000"
+    - name: Run Grafana
+      shell: |
+        docker rm -f grafana || true
+        docker run -d --name grafana \
+          --network monitoring \
+          -p 3000:3000 \
+          grafana/grafana
