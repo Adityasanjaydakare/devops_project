@@ -68,6 +68,14 @@ pipeline {
         }
 
     }
+        stage('Monitoring Setup (Prometheus + Grafana)') {
+           steps {
+               sh '''
+                 cd ansible
+                 ansible-playbook -i inventory playbook.yml
+                '''
+    }
+}
 
     post {
         success {
