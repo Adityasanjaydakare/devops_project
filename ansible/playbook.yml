@@ -1,25 +1,66 @@
-- name: Configure App Server
+- name: Configure App Server with Monitoring
   hosts: app
   become: yes
 
   tasks:
-    - name: Update system
-      apt:
-        update_cache: yes
 
-    - name: Install Docker
-      apt:
-        name: docker.io
-        state: present
+  - name: Update system
+    apt:
+      update_cache: yes
 
-    - name: Start Docker
-      service:
-        name: docker
-        state: started
-        enabled: true
+  - name: Install Docker
+    apt:
+      name: docker.io
+      state: present
 
-    - name: Pull application image
-      shell: docker pull aditya/devsecops-app:latest
+  - name: Start Docker
+    service:
+      name: docker
+      state: started
+      enabled: true
 
-    - name: Run application container
-      shell: docker run -d -p 3000:3000 aditya/devsecops-app:latest
+  - name: Run Node Exporter
+    docker_container:
+      name: node-exporter
+      image: prom/node-exporter
+      state: started
+      restart_policy: always
+      ports:
+        - "9100:9100"
+
+  - name: Create Prometheus config directory
+    file:
+      path: /opt/prometheus
+      state: directory
+
+  - name: Create Prometheus config file
+    copy:
+      dest: /opt/prometheus/prometheus.yml
+      content: |
+        global:
+          scrape_interval: 15s
+
+        scrape_configs:
+          - job_name: 'node'
+            static_configs:
+              - targets: ['localhost:9100']
+
+  - name: Run Prometheus
+    docker_container:
+      name: prometheus
+      image: prom/prometheus
+      state: started
+      restart_policy: always
+      ports:
+        - "9090:9090"
+      volumes:
+        - /opt/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  - name: Run Grafana
+    docker_container:
+      name: grafana
+      image: grafana/grafana
+      state: started
+      restart_policy: always
+      ports:
+        - "3000:3000"
