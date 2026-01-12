@@ -1,45 +1,46 @@
 # 🔐 DevSecOps CI/CD Automation Project
 
-**Automated, Secure, and Scalable CI/CD Pipeline using Jenkins, Docker, Trivy, Terraform, Ansible, Prometheus & Grafana**
+**End-to-End Secure CI/CD Pipeline using Jenkins, Docker, Trivy, Terraform, Ansible, Prometheus & Grafana**
 
-This project implements a modern **DevSecOps pipeline** that integrates security, infrastructure automation, monitoring, and notifications into every stage of application delivery.
+This project demonstrates a complete **DevSecOps workflow** that automates application build, security scanning, infrastructure provisioning, monitoring setup, and email notifications.
 
 ---
 
-## 🎯 Objective
+## 🎯 Purpose of This Project
 
-To design and implement a fully automated pipeline that:
+To implement a production-style pipeline that:
 
-- Builds and packages an application
-- Performs security scanning at multiple levels
+- Automates builds and deployments
+- Integrates security at every stage
 - Provisions cloud infrastructure automatically
-- Configures monitoring and observability
-- Notifies stakeholders on pipeline outcomes
+- Enables monitoring and observability
+- Sends real-time build notifications
 
 ---
 
-## 🔄 End-to-End Workflow
+## 🔄 Pipeline Flow
 
-Code Push → Jenkins → Dependency Install → Security Scan → Docker Build →
-Image Scan → Terraform Infra → Ansible Monitoring → Email Notification
+Code Push → Jenkins → Dependency Install → Trivy Scan →
+Docker Build → Trivy Image Scan → Terraform Infra →
+Ansible Monitoring → Email Notification
 
 yaml
 Copy code
 
 ---
 
-## 🗂️ Repository Layout
+## 🗂 Repository Structure
 
 devsecops-project/
 │
-├── app/ → Application source code (Node.js)
-├── terraform/ → AWS EC2 provisioning (Terraform)
-├── ansible/ → Monitoring automation (Prometheus + Grafana)
+├── app/ # Node.js application source code
+├── terraform/ # AWS EC2 provisioning using Terraform
+├── ansible/ # Monitoring automation (Prometheus + Grafana)
 │ ├── inventory
 │ └── playbook.yml
-├── Dockerfile → Container image definition
-├── Jenkinsfile → CI/CD pipeline script
-└── README.md → Documentation
+├── Dockerfile # Application container image
+├── Jenkinsfile # Jenkins pipeline definition
+└── README.md # Project documentation
 
 yaml
 Copy code
@@ -48,154 +49,259 @@ Copy code
 
 ## ⚙️ Tools & Technologies
 
-**CI/CD:** Jenkins  
-**Containerization:** Docker  
-**Security:** Trivy  
-**IaC:** Terraform  
-**Configuration Management:** Ansible  
-**Monitoring:** Prometheus, Grafana  
-**Cloud Platform:** AWS (EC2)  
-**Notifications:** Jenkins Email Extension  
+- **CI/CD:** Jenkins  
+- **Containerization:** Docker  
+- **Security Scanning:** Trivy  
+- **Infrastructure as Code:** Terraform  
+- **Configuration Management:** Ansible  
+- **Monitoring:** Prometheus, Grafana  
+- **Cloud:** AWS (EC2)  
+- **Notifications:** Jenkins Email Extension  
 
 ---
 
-## 🧪 Pipeline Stages Explained
+## 🧪 Pipeline Stages
 
-### 1️⃣ Workspace Cleanup
-Ensures a fresh build environment.
-```groovy
-cleanWs()
-2️⃣ Source Code Checkout
-Fetches the latest code from GitHub.
+1. **Clean Workspace** – Removes previous artifacts  
+2. **Checkout Code** – Pulls latest GitHub code  
+3. **Install Dependencies** – Runs `npm install`  
+4. **Trivy File Scan** – Scans application files  
+5. **Docker Build** – Builds container image  
+6. **Trivy Image Scan** – Scans Docker image  
+7. **Terraform Provisioning** – Creates AWS EC2  
+8. **Ansible Monitoring Setup** – Installs Prometheus & Grafana  
+9. **Email Notifications** – Sends success/failure emails  
 
-groovy
-Copy code
-checkout scm
-3️⃣ Dependency Installation
-Installs required Node.js packages.
+---
+
+## 🚀 How To Do This Project (Step-by-Step)
+
+Follow these steps to implement the project from scratch.
+
+---
+
+### 🔧 Step 1: Create Project Structure
+
+```bash
+mkdir devsecops-project
+cd devsecops-project
+mkdir app terraform ansible
+touch Dockerfile Jenkinsfile README.md
+🔧 Step 2: Add a Sample Node.js Application
+Inside the app/ folder:
 
 bash
 Copy code
 cd app
-node -v
-npm -v
-npm install
-4️⃣ Security Scan – Source Code
-Scans application files for vulnerabilities.
+npm init -y
+npm install express
+Create index.js:
+
+javascript
+Copy code
+const express = require('express');
+const app = express();
+
+app.get('/', (req, res) => {
+  res.send('DevSecOps Pipeline Running Successfully!');
+});
+
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
+});
+🔧 Step 3: Create Dockerfile
+In the project root:
+
+dockerfile
+Copy code
+FROM node:18
+WORKDIR /app
+COPY app/package*.json ./
+RUN npm install
+COPY app .
+EXPOSE 3000
+CMD ["node", "index.js"]
+🔧 Step 4: Install Required Tools on Jenkins Server
+bash
+Copy code
+sudo apt update
+sudo apt install -y docker.io ansible terraform
+curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh
+Add Jenkins user to Docker group:
 
 bash
 Copy code
-trivy fs app
-5️⃣ Container Build
-Creates a Docker image of the application.
+sudo usermod -aG docker jenkins
+sudo systemctl restart jenkins
+🔧 Step 5: Configure AWS Credentials in Jenkins
+Go to Jenkins → Manage Jenkins → Credentials
 
-bash
-Copy code
-docker build -t devsecops-app:latest .
-6️⃣ Security Scan – Container Image
-Checks Docker image for vulnerabilities.
-
-bash
-Copy code
-trivy image devsecops-app:latest
-7️⃣ Cloud Infrastructure Automation
-Provisions AWS EC2 using Terraform.
-
-bash
-Copy code
-cd terraform
-terraform init
-terraform apply -auto-approve
-🔐 AWS credentials are securely injected via Jenkins credentials:
+Add:
 
 aws-access-key
 
 aws-secret-key
 
-8️⃣ Monitoring Deployment
-Configures Prometheus & Grafana using Ansible.
+🔧 Step 6: Write Terraform Code (EC2 Setup)
+Inside terraform/main.tf:
 
-bash
+hcl
 Copy code
-cd ansible
-ansible-playbook -i inventory playbook.yml
-📧 Build Notifications
-The pipeline automatically sends emails:
+provider "aws" {
+  region = "ap-south-1"
+}
 
-✅ Success Email
-Job Name
+resource "aws_instance" "devsecops_ec2" {
+  ami           = "ami-0e86e20dae9224db8"
+  instance_type = "t2.micro"
 
-Build Number
+  tags = {
+    Name = "DevSecOps-EC2"
+  }
+}
+🔧 Step 7: Create Ansible Monitoring Playbook
+Inside ansible/playbook.yml:
+
+yaml
+Copy code
+- name: Install Prometheus and Grafana
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Start Docker
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Run Prometheus
+      shell: docker run -d -p 9090:9090 prom/prometheus
+
+    - name: Run Grafana
+      shell: docker run -d -p 3000:3000 grafana/grafana
+🔧 Step 8: Add Jenkins Pipeline (Jenkinsfile)
+Add your provided pipeline script into Jenkinsfile:
+
+groovy
+Copy code
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "devsecops-app"
+        DOCKER_TAG = "latest"
+        AWS_DEFAULT_REGION = "ap-south-1"
+    }
+
+    stages {
+        stage('Clean Workspace') {
+            steps { cleanWs() }
+        }
+
+        stage('Checkout Code') {
+            steps { checkout scm }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                dir('app') {
+                    sh '''
+                        node -v
+                        npm -v
+                        npm install
+                    '''
+                }
+            }
+        }
+
+        stage('Trivy File Scan') {
+            steps { sh 'trivy fs app' }
+        }
+
+        stage('Docker Build') {
+            steps { sh 'docker build -t ${IMAGE_NAME}:${DOCKER_TAG} .' }
+        }
+
+        stage('Trivy Image Scan') {
+            steps { sh 'trivy image ${IMAGE_NAME}:${DOCKER_TAG}' }
+        }
+
+        stage('Terraform Infra Provision (EC2)') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    dir('terraform') {
+                        sh '''
+                            terraform init
+                            terraform apply -auto-approve
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Monitoring Setup (Prometheus + Grafana)') {
+            steps {
+                sh '''
+                    cd ansible
+                    ansible-playbook -i inventory playbook.yml
+                '''
+            }
+        }
+    }
+}
+🔧 Step 9: Create Jenkins Pipeline Job
+Open Jenkins Dashboard
+
+Click New Item → Pipeline
+
+Select Pipeline script from SCM
+
+Add GitHub repository URL
+
+Save and click Build Now
+
+📧 Email Notifications
+The pipeline automatically sends:
+
+✅ Success Email when all stages pass
+
+❌ Failure Email if any stage fails
+
+Includes:
+
+Job name
+
+Build number
 
 Build URL
 
-Status confirmation
-
-❌ Failure Email
-Job Name
-
-Build Number
-
-Error tracking link
-
-🌍 Environment Configuration
-groovy
-Copy code
-IMAGE_NAME = "devsecops-app"
-DOCKER_TAG = "latest"
-AWS_DEFAULT_REGION = "ap-south-1"
-🧩 Prerequisites
-Before running the pipeline, ensure:
-
-Jenkins with required plugins installed
-
-Docker installed on Jenkins agent
-
-Node.js & npm available
-
-Terraform installed
-
-Ansible installed
-
-Trivy installed
-
-AWS account configured
-
-Jenkins credentials created:
-
-aws-access-key
-
-aws-secret-key
-
-Jenkins Email Extension configured
-
-🚀 How to Run
-Clone this repository.
-
-Add the pipeline script as Jenkinsfile.
-
-Configure AWS credentials in Jenkins.
-
-Create a Jenkins Pipeline Job linked to this repo.
-
-Trigger the build manually or using a webhook.
-
 🏆 Key Highlights
-✔ End-to-end DevSecOps automation
+✔ DevSecOps best practices
 ✔ Security scanning at code & image level
-✔ Infrastructure provisioning via Terraform
-✔ Automated monitoring with Ansible
-✔ Real-time email notifications
-✔ Production-style CI/CD architecture
+✔ Infrastructure automation with Terraform
+✔ Monitoring with Prometheus & Grafana
+✔ Email alerts for pipeline status
+✔ Real-world CI/CD architecture
 
 👨‍💻 Author
 Aditya Sanjay Dakare
 DevOps Engineer | AWS | Jenkins | Docker | Terraform | Ansible | DevSecOps
 
 ⭐ Support
-If you found this project useful:
-👉 Star the repository
-👉 Fork it to customize
-👉 Open issues for improvements
+If this project helped you:
 
-Building secure, automated pipelines — one commit at a time. 🚀
+⭐ Star the repository
+🍴 Fork to customize
+🐛 Raise issues for improvements
+
+Automating securely, deploying confidently 🚀
